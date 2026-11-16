@@ -1,0 +1,13 @@
+{
+  "name": "realtime-telemetry-hub",
+  "version": "1.0.0",
+  "description": "High-throughput real-time telemetry streaming and dashboard engine",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "author": "Samil Castillo <samilcastillo77@gmail.com>",
+  "license": "MIT"
+}

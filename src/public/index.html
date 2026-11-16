@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Telemetry Hub</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #4ade80;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+    body { background: var(--bg); color: var(--text); padding: 2rem; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .badge { background: #14532d; color: var(--green); padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: bold; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; }
+    .card h3 { font-size: 0.9rem; color: var(--muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .metric-val { font-size: 2.2rem; font-weight: bold; color: var(--accent); }
+    .metric-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+    .chart-container { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; }
+    canvas { width: 100%; height: 200px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>⚡ Telemetry Streaming Hub</h1>
+      <p style="color: var(--muted); font-size: 0.95rem;">Real-time low-latency system metrics pipeline</p>
+    </div>
+    <div id="status" class="badge">● CONNECTED</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Process CPU Usage</h3>
+      <div id="cpuVal" class="metric-val">0%</div>
+      <div id="cpuSub" class="metric-sub">Process execution workload</div>
+    </div>
+    <div class="card">
+      <h3>Heap Memory Used</h3>
+      <div id="memVal" class="metric-val">0 MB</div>
+      <div id="memSub" class="metric-sub">V8 engine memory allocation</div>
+    </div>
+    <div class="card">
+      <h3>System Free RAM</h3>
+      <div id="sysMemVal" class="metric-val">0 MB</div>
+      <div id="sysMemSub" class="metric-sub">Available host physical memory</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <h3 style="color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; font-size: 0.9rem;">Live CPU Load History (Last 60s)</h3>
+    <canvas id="chartCanvas" width="800" height="200"></canvas>
+  </div>
+
+  <script>
+    const cpuVal = document.getElementById('cpuVal');
+    const memVal = document.getElementById('memVal');
+    const sysMemVal = document.getElementById('sysMemVal');
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const history = [];
+
+    function drawChart() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      const step = canvas.width / 60;
+      history.forEach((val, i) => {
+        const x = i * step;
+        const y = canvas.height - (val / 100) * (canvas.height - 20) - 10;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    const eventSource = new EventSource('/api/v1/stream');
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      cpuVal.textContent = data.process.cpuPercent + '%';
+      memVal.textContent = data.process.heapUsedMb + ' MB';
+      sysMemVal.textContent = data.system.freeMemMb + ' MB';
+
+      history.push(data.process.cpuPercent);
+      if (history.length > 60) history.shift();
+      drawChart();
+    };
+  </script>
+</body>
+</html>

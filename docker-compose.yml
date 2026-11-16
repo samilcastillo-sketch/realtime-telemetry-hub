@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  telemetry-hub:
+    build: .
+    container_name: telemetry-dashboard
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - HOST=0.0.0.0
